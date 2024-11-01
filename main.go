@@ -46,15 +46,55 @@ func encryptIt(value []byte, key string) []byte {
 	return cipheredText
 }
 
+func decryptIt(cipherText []byte, key string) []byte {
+	hashedKey := mdHashing(key)
+	aesBlock, err := aes.NewCipher([]byte(hashedKey))
+
+	if err != nil {
+		fmt.Printf("Error generating aesBlock, decrypt: %s\n", err)
+		return nil
+	}
+
+	gcmInstance, err := cipher.NewGCM(aesBlock)
+	if err != nil {
+		fmt.Printf("Error generating gcmInstance, decrypt: %s\n", err)
+		return nil
+	}
+
+	nonceSize := gcmInstance.NonceSize()
+	nonce, cipheredText := cipherText[:nonceSize], cipherText[nonceSize:]
+
+	originalText, err := gcmInstance.Open(nil, nonce, cipheredText, nil)
+	if err != nil {
+		fmt.Printf("Error opening gcmInstance: %s\n", err)
+		return nil
+	}
+	return originalText
+}
+
 func main() {
 	fmt.Println(sha256Hashing("Hello_world"))
 	fmt.Println(sha256Hashing("Silly_me"))
+	key := "random.key"
+	encryptedText := encryptIt([]byte("This is some random text"), key)
+	decryptedText := decryptIt(encryptedText, key)
 
+	fmt.Println("-------------Encrypted----------------")
 	fmt.Println("---------------Bytes---------------")
-	fmt.Println(encryptIt([]byte("This is some random text"), "random.key"))
+	fmt.Println(encryptedText)
 	fmt.Println("------------------------------------")
 
 	fmt.Println("---------------String---------------")
-	fmt.Println(string(encryptIt([]byte("This is some random text"), "random.key")))
+	fmt.Println(string(encryptedText))
 	fmt.Println("---------------------------------------")
+
+	fmt.Println("----------------Decrypted---------------")
+	fmt.Println("----------------Bytes--------------------")
+	fmt.Println(decryptedText)
+	fmt.Println("-----------------------------------------")
+
+	fmt.Println("----------------String-------------------")
+	fmt.Println(string(decryptedText))
+	fmt.Println("-----------------------------------------")
+
 }
